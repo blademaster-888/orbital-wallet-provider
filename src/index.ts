@@ -6,6 +6,18 @@ export type { OrbitalProviderProps, OrbitalWalletContextState } from "./OrbitalP
 export { OrbitalIcon } from "./OrbitalIcon";
 export type { OrbitalIconProps } from "./OrbitalIcon";
 
+// ─── Utilities ───────────────────────────────────────────────────────────────
+export {
+  photonsToRxd,
+  rxdToPhotons,
+  formatRxd,
+  formatToken,
+  truncateAddress,
+  glyphExplorerUrl,
+  explorerTxUrl,
+  isValidRxdAddress,
+} from "./utils";
+
 // ─── All types ───────────────────────────────────────────────────────────────
 export type {
   // Primitives
