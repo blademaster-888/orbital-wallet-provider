@@ -52,6 +52,8 @@ export interface GlyphFtParams {
   tokenRef: GlyphRef;
   address: RxdAddress;
   amount: number;
+  tokenTicker?: string;
+  tokenName?: string;
 }
 
 export interface GlyphFtResponse {
@@ -152,6 +154,55 @@ export interface ExchangeRateResponse {
   rate: number;
 }
 
+// ─── Wallet token (from wallet's internal DB) ────────────────────────────────
+
+export interface WalletToken {
+  id?: number;
+  type: "ft" | "nft";
+  ref: string;
+  name: string;
+  ticker: string;
+  /** Raw FT units as a numeric string (bigint serialized over postMessage) */
+  balance: string;
+  fileExt: string;
+  /** Base64 data URL of the token icon read from wallet OPFS, if available */
+  iconSrc?: string;
+}
+
+// ─── Atomic token swap (PSBT) ────────────────────────────────────────────────
+
+export interface CreateTokenSwapOfferParams {
+  offerTokenRef: GlyphRef;
+  offerTokenTicker?: string;
+  offerTokenName?: string;
+  offerAmount: number;
+  wantTokenRef: GlyphRef;
+  wantTokenTicker?: string;
+  wantTokenName?: string;
+  wantAmount: number;
+}
+
+export interface CreateTokenSwapOfferResponse {
+  partialRawtx: RawTx;
+}
+
+export interface CompleteTokenSwapOfferParams {
+  partialRawtx: RawTx;
+  offerTokenRef: GlyphRef;
+  offerTokenTicker?: string;
+  offerTokenName?: string;
+  offerAmount: number;
+  wantTokenRef: GlyphRef;
+  wantTokenTicker?: string;
+  wantTokenName?: string;
+  wantAmount: number;
+  sellerAddress: RxdAddress;
+}
+
+export interface CompleteTokenSwapOfferResponse {
+  txid: TxID;
+}
+
 // ─── Social profile ──────────────────────────────────────────────────────────
 
 export interface OrbitalSocialProfile {
@@ -189,6 +240,9 @@ export interface OrbitalWalletProvider {
   decrypt: (params: DecryptParams) => Promise<string | undefined>;
   getExchangeRate: () => Promise<ExchangeRateResponse | undefined>;
   getSocialProfile: () => Promise<OrbitalSocialProfile | undefined>;
+  getTokens: () => Promise<WalletToken[] | undefined>;
+  createTokenSwapOffer: (params: CreateTokenSwapOfferParams) => Promise<CreateTokenSwapOfferResponse | undefined>;
+  completeTokenSwapOffer: (params: CompleteTokenSwapOfferParams) => Promise<CompleteTokenSwapOfferResponse | undefined>;
   on: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
   off: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
 }

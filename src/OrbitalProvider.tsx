@@ -31,6 +31,11 @@ import {
   EncryptParams,
   DecryptParams,
   ExchangeRateResponse,
+  WalletToken,
+  CreateTokenSwapOfferParams,
+  CreateTokenSwapOfferResponse,
+  CompleteTokenSwapOfferParams,
+  CompleteTokenSwapOfferResponse,
 } from "./types";
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -107,6 +112,19 @@ export interface OrbitalWalletContextState {
   /** Get social/profile info for the connected account. */
   getSocialProfile: () => Promise<OrbitalSocialProfile | undefined>;
 
+  /** Get all tokens from the wallet's internal DB. */
+  getTokens: () => Promise<WalletToken[] | undefined>;
+
+  /** Create a partial (PSBT-style) atomic swap offer as the seller. */
+  createTokenSwapOffer: (
+    params: CreateTokenSwapOfferParams,
+  ) => Promise<CreateTokenSwapOfferResponse | undefined>;
+
+  /** Complete an atomic swap offer as the buyer — broadcasts immediately. */
+  completeTokenSwapOffer: (
+    params: CompleteTokenSwapOfferParams,
+  ) => Promise<CompleteTokenSwapOfferResponse | undefined>;
+
   /** Register an event listener on the wallet. */
   on: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
 
@@ -139,6 +157,9 @@ const defaultContext: OrbitalWalletContextState = {
   decrypt: noop,
   getExchangeRate: noop,
   getSocialProfile: noop,
+  getTokens: noop,
+  createTokenSwapOffer: noop,
+  completeTokenSwapOffer: noop,
   on: () => {},
   off: () => {},
 };
@@ -301,8 +322,19 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
   const getBalance = useCallback(async () => {
     const p = providerRef.current;
     if (!p) return undefined;
-    const bal = await p.getBalance();
-    if (bal) setBalance(bal);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = (await p.getBalance()) as any;
+    if (!raw) return undefined;
+    // Normalise: wallet may return { rxd, photons } instead of { confirmed, unconfirmed, total }
+    const bal: RxdBalance =
+      raw.confirmed !== undefined && raw.total !== undefined
+        ? (raw as RxdBalance)
+        : {
+            confirmed: raw.photons ?? Math.round((raw.rxd ?? 0) * 1e8),
+            unconfirmed: 0,
+            total: raw.photons ?? Math.round((raw.rxd ?? 0) * 1e8),
+          };
+    setBalance(bal);
     return bal;
   }, []);
 
@@ -313,8 +345,12 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
   );
 
   const transferGlyphFt = useCallback(
-    (params: GlyphFtParams) =>
-      providerRef.current ? providerRef.current.transferGlyphFt(params) : Promise.resolve(undefined),
+    (params: GlyphFtParams) => {
+      const p = providerRef.current as any;
+      if (!p) return Promise.resolve(undefined);
+      // Wallet extension exposes transferToken; fall back if transferGlyphFt not present
+      return (p.transferGlyphFt ?? p.transferToken)?.(params);
+    },
     []
   );
 
@@ -372,6 +408,34 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
     []
   );
 
+  const getTokens = useCallback(async () => {
+    const p = providerRef.current;
+    if (!p) return undefined;
+    try {
+      const raw = await (p as any).getTokens?.();
+      if (!Array.isArray(raw)) return undefined;
+      return raw as WalletToken[];
+    } catch {
+      return undefined;
+    }
+  }, []);
+
+  const createTokenSwapOffer = useCallback(
+    (params: CreateTokenSwapOfferParams) =>
+      providerRef.current
+        ? (providerRef.current as any).createSwapOffer?.(params)
+        : Promise.resolve(undefined),
+    [],
+  );
+
+  const completeTokenSwapOffer = useCallback(
+    (params: CompleteTokenSwapOfferParams) =>
+      providerRef.current
+        ? (providerRef.current as any).completeSwapOffer?.(params)
+        : Promise.resolve(undefined),
+    [],
+  );
+
   const on = useCallback(
     (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => {
       providerRef.current?.on(event, handler);
@@ -409,6 +473,9 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
         decrypt,
         getExchangeRate,
         getSocialProfile,
+        getTokens,
+        createTokenSwapOffer,
+        completeTokenSwapOffer,
         on,
         off,
       }}

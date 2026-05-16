@@ -66,8 +66,15 @@ export type {
   // Misc
   ExchangeRateResponse,
   OrbitalSocialProfile,
+  WalletToken,
   OrbitalWalletEventName,
   OrbitalWalletEventHandler,
+
+  // Atomic swap (PSBT)
+  CreateTokenSwapOfferParams,
+  CreateTokenSwapOfferResponse,
+  CompleteTokenSwapOfferParams,
+  CompleteTokenSwapOfferResponse,
 
   // Full provider interface (for advanced use)
   OrbitalWalletProvider,
