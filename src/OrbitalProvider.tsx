@@ -273,14 +273,11 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
     }
     providerRef.current = p;  // restore ref if it was cleared by disconnect
     if (connectingRef.current) {
-      console.warn("[orbital] connect() called while already connecting — ignored");
       return undefined;
     }
     connectingRef.current = true;
     try {
-      console.log("[orbital] calling p.connect()…");
       const key = await p.connect();
-      console.log("[orbital] p.connect() resolved →", key);
 
       if (key) {
         setPubKey(key);
@@ -294,7 +291,6 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
 
       return key;
     } catch (err) {
-      console.error("[orbital] p.connect() rejected →", err);
       return undefined;
     } finally {
       connectingRef.current = false;
