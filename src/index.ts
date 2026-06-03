@@ -70,11 +70,17 @@ export type {
   OrbitalWalletEventName,
   OrbitalWalletEventHandler,
 
-  // Atomic swap (PSBT)
+  // Atomic swap (PSBT) — FT
   CreateTokenSwapOfferParams,
   CreateTokenSwapOfferResponse,
   CompleteTokenSwapOfferParams,
   CompleteTokenSwapOfferResponse,
+
+  // Atomic swap (PSBT) — NFT
+  CreateNftSwapOfferParams,
+  CreateNftSwapOfferResponse,
+  CompleteNftSwapOfferParams,
+  CompleteNftSwapOfferResponse,
 
   // Full provider interface (for advanced use)
   OrbitalWalletProvider,

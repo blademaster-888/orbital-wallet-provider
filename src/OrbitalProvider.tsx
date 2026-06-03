@@ -36,6 +36,10 @@ import {
   CreateTokenSwapOfferResponse,
   CompleteTokenSwapOfferParams,
   CompleteTokenSwapOfferResponse,
+  CreateNftSwapOfferParams,
+  CreateNftSwapOfferResponse,
+  CompleteNftSwapOfferParams,
+  CompleteNftSwapOfferResponse,
 } from "./types";
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -125,6 +129,16 @@ export interface OrbitalWalletContextState {
     params: CompleteTokenSwapOfferParams,
   ) => Promise<CompleteTokenSwapOfferResponse | undefined>;
 
+  /** Create a partial atomic swap offer as the seller for an NFT. */
+  createNftSwapOffer: (
+    params: CreateNftSwapOfferParams,
+  ) => Promise<CreateNftSwapOfferResponse | undefined>;
+
+  /** Complete an NFT atomic swap offer as the buyer — broadcasts immediately. */
+  completeNftSwapOffer: (
+    params: CompleteNftSwapOfferParams,
+  ) => Promise<CompleteNftSwapOfferResponse | undefined>;
+
   /** Register an event listener on the wallet. */
   on: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
 
@@ -160,6 +174,8 @@ const defaultContext: OrbitalWalletContextState = {
   getTokens: noop,
   createTokenSwapOffer: noop,
   completeTokenSwapOffer: noop,
+  createNftSwapOffer: noop,
+  completeNftSwapOffer: noop,
   on: () => {},
   off: () => {},
 };
@@ -432,6 +448,22 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
     [],
   );
 
+  const createNftSwapOffer = useCallback(
+    (params: CreateNftSwapOfferParams) =>
+      providerRef.current
+        ? (providerRef.current as any).createNftSwapOffer?.(params)
+        : Promise.resolve(undefined),
+    [],
+  );
+
+  const completeNftSwapOffer = useCallback(
+    (params: CompleteNftSwapOfferParams) =>
+      providerRef.current
+        ? (providerRef.current as any).completeNftSwapOffer?.(params)
+        : Promise.resolve(undefined),
+    [],
+  );
+
   const on = useCallback(
     (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => {
       providerRef.current?.on(event, handler);
@@ -472,6 +504,8 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
         getTokens,
         createTokenSwapOffer,
         completeTokenSwapOffer,
+        createNftSwapOffer,
+        completeNftSwapOffer,
         on,
         off,
       }}

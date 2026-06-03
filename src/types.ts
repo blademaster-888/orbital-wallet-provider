@@ -220,6 +220,41 @@ export type OrbitalWalletEventName =
 
 export type OrbitalWalletEventHandler = () => void;
 
+// ─── Atomic NFT swap (PSBT) ──────────────────────────────────────────────────
+
+export interface CreateNftSwapOfferParams {
+  /** Ref of the NFT being offered (txid_BE:vout format) */
+  offerTokenRef: GlyphRef;
+  offerTokenName?: string;
+  /** What the seller wants in return — "rxd" or an FT ref */
+  wantTokenRef: GlyphRef;
+  wantTokenTicker?: string;
+  wantTokenName?: string;
+  /** Amount of want token (token units, or satoshis for RXD) */
+  wantAmount: number;
+}
+
+export interface CreateNftSwapOfferResponse {
+  partialRawtx: RawTx;
+}
+
+export interface CompleteNftSwapOfferParams {
+  partialRawtx: RawTx;
+  /** The NFT ref being received by the buyer */
+  offerTokenRef: GlyphRef;
+  offerTokenName?: string;
+  /** What the buyer pays — "rxd" or an FT ref */
+  wantTokenRef: GlyphRef;
+  wantTokenTicker?: string;
+  wantTokenName?: string;
+  wantAmount: number;
+  sellerAddress: RxdAddress;
+}
+
+export interface CompleteNftSwapOfferResponse {
+  txid: TxID;
+}
+
 // ─── Full injected provider interface ────────────────────────────────────────
 
 export interface OrbitalWalletProvider {
@@ -243,6 +278,8 @@ export interface OrbitalWalletProvider {
   getTokens: () => Promise<WalletToken[] | undefined>;
   createTokenSwapOffer: (params: CreateTokenSwapOfferParams) => Promise<CreateTokenSwapOfferResponse | undefined>;
   completeTokenSwapOffer: (params: CompleteTokenSwapOfferParams) => Promise<CompleteTokenSwapOfferResponse | undefined>;
+  createNftSwapOffer: (params: CreateNftSwapOfferParams) => Promise<CreateNftSwapOfferResponse | undefined>;
+  completeNftSwapOffer: (params: CompleteNftSwapOfferParams) => Promise<CompleteNftSwapOfferResponse | undefined>;
   on: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
   off: (event: OrbitalWalletEventName, handler: OrbitalWalletEventHandler) => void;
 }
