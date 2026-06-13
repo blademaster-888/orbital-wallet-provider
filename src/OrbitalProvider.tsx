@@ -52,6 +52,12 @@ export interface OrbitalWalletContextState {
   isReady: boolean;
 
   /**
+   * Version string reported by the extension (e.g. "0.1.5"), or null if
+   * the extension is too old to expose a version.
+   */
+  walletVersion: string | null;
+
+  /**
    * True when the user has actively connected this site in the wallet.
    */
   isConnected: boolean;
@@ -152,6 +158,7 @@ const noop = async () => undefined;
 
 const defaultContext: OrbitalWalletContextState = {
   isReady: false,
+  walletVersion: null,
   isConnected: false,
   pubKey: null,
   addresses: null,
@@ -195,6 +202,7 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
   children,
 }) => {
   const [isReady, setIsReady] = useState(false);
+  const [walletVersion, setWalletVersion] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [pubKey, setPubKey] = useState<PubKey | null>(null);
   const [addresses, setAddresses] = useState<OrbitalAddresses | null>(null);
@@ -205,6 +213,22 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
   const connectingRef = useRef(false);
   const autoReconnectDone = useRef(false);
 
+  // ── Suppress "Extension context invalidated" errors from disconnecting wallet ──
+  useEffect(() => {
+    const handler = (e: ErrorEvent) => {
+      if (e.message?.includes("Extension context invalidated")) e.preventDefault()
+    }
+    const unhandled = (e: PromiseRejectionEvent) => {
+      if (e.reason?.message?.includes("Extension context invalidated")) e.preventDefault()
+    }
+    window.addEventListener("error", handler)
+    window.addEventListener("unhandledrejection", unhandled)
+    return () => {
+      window.removeEventListener("error", handler)
+      window.removeEventListener("unhandledrejection", unhandled)
+    }
+  }, [])
+
   // ── Detect the injected orbital object ─────────────────────────────────
   useEffect(() => {
     const checkProvider = () => {
@@ -212,6 +236,8 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
       if (p && typeof p.connect === "function") {
         providerRef.current = p;
         setIsReady(true);
+        const v = (p as any).version;
+        if (typeof v === "string" && v) setWalletVersion(v);
       }
     };
 
@@ -482,6 +508,7 @@ export const OrbitalProvider: React.FC<OrbitalProviderProps> = ({
     <OrbitalWalletContext.Provider
       value={{
         isReady,
+        walletVersion,
         isConnected,
         pubKey,
         addresses,
